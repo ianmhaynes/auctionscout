@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AuctionScout — Intelligent Lot Analysis</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --accent: #D4A853;
+      --bg: #0C0C0E;
+      --surface: #141418;
+      --surface2: #1C1C22;
+      --border: #2A2A32;
+      --text: #E8E4DC;
+      --muted: #6B6875;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Cormorant Garamond', serif; min-height: 100vh; }
+
+    /* ── HEADER ── */
+    .header {
+      border-bottom: 1px solid var(--border);
+      padding: 20px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--surface);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-left { display: flex; align-items: baseline; gap: 16px; }
+    .logo { font-size: 26px; font-weight: 300; letter-spacing: 0.08em; color: var(--accent); }
+    .logo span { color: var(--text); }
+    .tagline { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; letter-spacing: 0.05em; }
+
+    /* API KEY banner */
+    #api-banner {
+      background: #D4A85311;
+      border-bottom: 1px solid var(--accent);
+      padding: 10px 40px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--accent);
+    }
+    #api-banner input {
+      flex: 1;
+      max-width: 420px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 6px 12px;
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      outline: none;
+    }
+    #api-banner input:focus { border-color: var(--accent); }
+    #api-banner.hidden { display: none; }
+
+    /* ── MAIN ── */
+    .main { max-width: 1100px; margin: 0 auto; padding: 40px 24px 80px; }
+
+    /* ── PANELS ── */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 28px 32px;
+      margin-bottom: 20px;
+    }
+    .panel-title {
+      font-size: 10px;
+      font-family: 'DM Mono', monospace;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .panel-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    /* ── TABS ── */
+    .tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+    .tab {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 10px 18px;
+      cursor: pointer;
+      color: var(--muted);
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: all 0.15s;
+      user-select: none;
+    }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab:hover:not(.active) { color: var(--text); }
+
+    /* ── INPUTS ── */
+    .url-row { display: flex; gap: 12px; }
+    input[type="url"], input[type="text"] {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 13px 18px;
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus { border-color: var(--accent); }
+    input::placeholder { color: var(--muted); }
+
+    textarea {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 12px 16px;
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      outline: none;
+      resize: vertical;
+      line-height: 1.6;
+      transition: border-color 0.2s;
+      min-height: 120px;
+    }
+    textarea:focus { border-color: var(--accent); }
+
+    /* ── BUTTONS ── */
+    .btn {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      border-radius: 2px;
+      padding: 13px 28px;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+      white-space: nowrap;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-ghost {
+      background: transparent;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      padding: 8px 16px;
+      font-size: 10px;
+    }
+    .btn-sm { padding: 7px 14px; font-size: 10px; }
+
+    /* ── INTERESTS ── */
+    .interests-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    .interest-tag {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 6px 14px;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+      user-select: none;
+    }
+    .interest-tag.active { border-color: var(--accent); color: var(--accent); }
+    .interest-tag .remove {
+      background: none; border: none; color: var(--muted); cursor: pointer;
+      font-size: 16px; line-height: 1; padding: 0; transition: color 0.2s;
+    }
+    .interest-tag .remove:hover { color: #e44; }
+    .add-row { display: flex; gap: 8px; }
+    .add-row input { flex: none; width: 220px; padding: 7px 12px; font-size: 14px; font-family: 'Cormorant Garamond', serif; }
+
+    .showAll-toggle {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      padding: 4px 12px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 2px;
+      background: transparent;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+    }
+    .showAll-toggle.active { border-color: var(--accent); color: var(--accent); background: #D4A85311; }
+
+    /* ── PASTE PAGES ── */
+    .page-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      color: var(--accent);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .page-label .remove-page {
+      background: none; border: none; color: var(--muted);
+      cursor: pointer; font-size: 12px; padding: 0; font-family: 'DM Mono', monospace;
+    }
+    .page-label .remove-page:hover { color: #e44; }
+    .page-wrap { margin-bottom: 12px; }
+
+    /* ── SCRAPE MODE ── */
+    .steps { display: grid; gap: 14px; margin-bottom: 24px; }
+    .step { display: flex; gap: 14px; align-items: flex-start; }
+    .step-num { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--accent); min-width: 18px; padding-top: 2px; }
+    .step-text { font-size: 13px; color: var(--text); line-height: 1.6; }
+    .code-preview {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 10px 14px;
+      margin-bottom: 20px;
+      position: relative;
+    }
+    .code-preview-label { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--muted); margin-bottom: 6px; letter-spacing: 0.08em; }
+    .code-preview-code { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--accent); word-break: break-all; line-height: 1.5; max-height: 56px; overflow: hidden; }
+    .code-copy-btn {
+      position: absolute; top: 10px; right: 10px;
+      background: none; border: 1px solid var(--border); color: var(--muted);
+      font-family: 'DM Mono', monospace; font-size: 9px; padding: 3px 8px;
+      cursor: pointer; border-radius: 2px; transition: all 0.2s;
+    }
+    .code-copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .scrape-waiting { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); padding: 14px 0; display: flex; align-items: center; gap: 10px; }
+    .pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); animation: pulse 1.5s ease infinite; }
+    @keyframes pulse { 0%,100% { opacity: 0.3; } 50% { opacity: 1; } }
+    .scrape-ready { background: #D4A85315; border: 1px solid #D4A85344; border-radius: 2px; padding: 12px 16px; margin-bottom: 16px; }
+    .scrape-ready-title { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--accent); margin-bottom: 4px; }
+    .scrape-ready-url { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); }
+
+    /* ── ERROR ── */
+    .error-box {
+      background: #e4444422;
+      border: 1px solid #e4444444;
+      border-radius: 2px;
+      padding: 14px 18px;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: #F08080;
+      margin-top: 12px;
+    }
+
+    /* ── LOADING ── */
+    .loading-wrap { text-align: center; padding: 80px 24px; }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 24px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-title { font-size: 24px; font-weight: 300; margin-bottom: 10px; color: var(--accent); }
+    .loading-sub { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); }
+
+    /* ── EMPTY STATE ── */
+    .empty-state { text-align: center; padding: 60px 24px; color: var(--muted); }
+    .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.4; }
+    .empty-text { font-size: 20px; font-weight: 300; }
+    .empty-sub { margin-top: 10px; font-size: 12px; font-family: 'DM Mono', monospace; line-height: 1.8; }
+
+    /* ── RESULTS ── */
+    .results-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 28px; }
+    .results-title { font-size: 34px; font-weight: 300; }
+    .results-title em { font-style: italic; color: var(--accent); }
+    .results-note { font-size: 14px; color: var(--muted); font-style: italic; margin-top: 6px; }
+    .results-source { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); margin-top: 6px; letter-spacing: 0.06em; }
+    .results-meta { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); text-align: right; }
+
+    .suggestion-banner {
+      background: #9B59B611;
+      border: 1px solid #9B59B633;
+      border-radius: 2px;
+      padding: 8px 16px;
+      font-size: 13px;
+      color: #BB8FFF;
+      font-style: italic;
+      margin-bottom: 8px;
+    }
+
+    /* ── ITEM CARD ── */
+    .item-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: 56px 1fr 160px;
+      margin-bottom: 14px;
+      transition: border-color 0.25s;
+      animation: fadeUp 0.4s ease both;
+    }
+    .item-card:hover { border-color: #D4A85344; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    .item-rank {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: var(--surface2); border-right: 1px solid var(--border);
+      padding: 16px 6px; gap: 4px;
+    }
+    .rank-num { font-size: 26px; font-weight: 300; color: var(--accent); line-height: 1; }
+    .rank-label { font-family: 'DM Mono', monospace; font-size: 8px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+
+    .item-body { padding: 18px 22px; }
+    .item-lot { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.08em; }
+    .item-name { font-size: 19px; font-weight: 400; line-height: 1.3; margin-bottom: 10px; }
+    .badges { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+    .badge { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 8px; border-radius: 1px; }
+    .badge-interest { background: #D4A85322; color: var(--accent); border: 1px solid #D4A85344; }
+    .badge-value { background: #4CAF5022; color: #6FCF97; border: 1px solid #4CAF5044; }
+    .badge-hidden { background: #9B59B622; color: #BB8FFF; border: 1px solid #9B59B644; }
+    .badge-caution { background: #E67E2222; color: #F0A070; border: 1px solid #E67E2244; }
+    .item-desc { font-size: 14px; line-height: 1.6; color: #B8B4AC; margin-bottom: 10px; }
+    .item-reasoning { font-size: 12px; line-height: 1.6; color: var(--muted); font-style: italic; }
+
+    .item-side {
+      background: var(--surface2); border-left: 1px solid var(--border);
+      padding: 18px 18px; display: flex; flex-direction: column; justify-content: center; gap: 14px;
+    }
+    .price-label { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 3px; }
+    .price-val { font-size: 20px; font-weight: 300; }
+    .price-val.est { font-size: 15px; color: var(--accent); }
+    .score-bar-bg { background: var(--border); border-radius: 1px; height: 4px; margin-top: 6px; }
+    .score-bar-fill { height: 4px; border-radius: 1px; background: linear-gradient(90deg, var(--accent), #E8C070); }
+
+    /* Responsive */
+    @media (max-width: 680px) {
+      .header { padding: 16px 20px; }
+      .tagline { display: none; }
+      .main { padding: 24px 16px 60px; }
+      .panel { padding: 20px; }
+      .item-card { grid-template-columns: 48px 1fr; }
+      .item-side { display: none; }
+      .results-header { flex-direction: column; gap: 8px; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- API KEY BANNER (shown until key is set) -->
+<div id="api-banner">
+  <span>⚿ Anthropic API Key:</span>
+  <input type="password" id="api-key-input" placeholder="sk-ant-…" autocomplete="off" />
+  <button class="btn btn-sm" onclick="saveApiKey()">Save</button>
+  <span id="api-key-status" style="color:var(--muted)">Not set — get yours at console.anthropic.com</span>
+</div>
+
+<header class="header">
+  <div class="header-left">
+    <div class="logo">Auction<span>Scout</span></div>
+    <div class="tagline">// intelligent lot analysis &amp; bidding intelligence</div>
+  </div>
+</header>
+
+<main class="main">
+
+  <!-- Input Panel -->
+  <div class="panel" id="input-panel">
+    <div class="tabs">
+      <div class="tab active" data-tab="url" onclick="switchTab('url')">URL</div>
+      <div class="tab" data-tab="paste" onclick="switchTab('paste')">Paste Catalogue</div>
+      <div class="tab" data-tab="scrape" onclick="switchTab('scrape')">Auto-Scrape ✦</div>
+    </div>
+
+    <!-- URL Tab -->
+    <div id="tab-url">
+      <div class="url-row">
+        <input type="url" id="url-input" placeholder="https://www.bonhams.com/auction/..." onkeydown="if(event.key==='Enter') analyse()" />
+        <button class="btn" onclick="analyse()" id="url-btn">Analyse Auction</button>
+      </div>
+    </div>
+
+    <!-- Paste Tab -->
+    <div id="tab-paste" style="display:none">
+      <div style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:16px;line-height:1.7">
+        For each page of the auction, copy the lot text and paste it below. A new slot appears as you fill each one.
+      </div>
+      <div id="paste-pages"></div>
+      <div style="display:flex;gap:10px;align-items:center;margin-top:4px">
+        <button class="btn" onclick="analyse()" id="paste-btn" disabled>Analyse</button>
+        <span id="paste-count" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)"></span>
+      </div>
+    </div>
+
+    <!-- Scrape Tab -->
+    <div id="tab-scrape" style="display:none">
+      <div style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:20px;line-height:1.7">
+        Install the bookmarklet once, click it on any auction site, and lots appear here automatically.
+      </div>
+      <div class="steps">
+        <div class="step"><div class="step-num">1.</div><div class="step-text">Copy the bookmarklet code below<br><button class="btn btn-sm" style="margin-top:8px" onclick="copyBookmarklet()" id="copy-bm-btn">Copy Bookmarklet Code</button></div></div>
+        <div class="step"><div class="step-num">2.</div><div class="step-text">In Chrome: drag it from your bookmarks bar — or in Safari: Bookmarks → Add Bookmark → paste code as the URL, name it <strong>AuctionScout</strong></div></div>
+        <div class="step"><div class="step-num">3.</div><div class="step-text">Open your auction site, click the AuctionScout bookmark</div></div>
+        <div class="step"><div class="step-num">4.</div><div class="step-text">Switch back here — lots arrive automatically</div></div>
+      </div>
+      <div class="code-preview">
+        <div class="code-preview-label">BOOKMARKLET CODE</div>
+        <div class="code-preview-code" id="bm-preview"></div>
+        <button class="code-copy-btn" onclick="copyBookmarklet()" id="copy-bm-btn2">copy</button>
+      </div>
+      <div id="scrape-waiting" class="scrape-waiting"><div class="pulse"></div> Waiting for scraper data…</div>
+      <div id="scrape-ready" class="scrape-ready" style="display:none">
+        <div class="scrape-ready-title" id="scrape-title"></div>
+        <div class="scrape-ready-url" id="scrape-url"></div>
+      </div>
+      <div id="scrape-actions" style="display:none">
+        <button class="btn" onclick="analyse()" id="scrape-btn">Analyse Lots</button>
+        <button class="btn btn-ghost" style="margin-left:10px" onclick="clearScrape()">Clear</button>
+      </div>
+    </div>
+
+    <div id="error-box" class="error-box" style="display:none"></div>
+  </div>
+
+  <!-- Interests Panel -->
+  <div class="panel">
+    <div class="panel-title" style="justify-content:space-between">
+      <span style="display:flex;align-items:center;gap:8px">My Collecting Interests <span style="flex:1;height:1px;display:inline-block;width:40px;background:var(--border);vertical-align:middle"></span></span>
+      <button class="showAll-toggle" id="show-all-btn" onclick="toggleShowAll()">○ All Categories</button>
+    </div>
+    <div id="interests-wrap">
+      <div class="interests-grid" id="presets-grid"></div>
+      <div class="interests-grid" id="custom-grid"></div>
+      <div class="add-row">
+        <input type="text" id="add-interest-input" placeholder="Add custom interest…" onkeydown="if(event.key==='Enter') addInterest()" style="flex:none;width:220px;font-family:'Cormorant Garamond',serif;font-size:15px" />
+        <button class="btn btn-ghost" onclick="addInterest()">+ Add</button>
+      </div>
+    </div>
+    <div id="showAll-note" style="display:none;font-family:'DM Mono',monospace;font-size:11px;color:var(--accent);margin-top:10px;letter-spacing:0.06em">
+      ◉ Showing best lots across the entire auction — ranked by value &amp; opportunity only
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div id="loading-wrap" class="loading-wrap" style="display:none">
+    <div class="spinner"></div>
+    <div class="loading-title">Scouting the auction…</div>
+    <div class="loading-sub">Analysing lots · Checking estimates · Ranking opportunities</div>
+  </div>
+
+  <div id="results-wrap" style="display:none">
+    <div class="results-header">
+      <div>
+        <div class="results-title" id="results-title"></div>
+        <div class="results-note" id="results-note"></div>
+        <div class="results-source" id="results-source"></div>
+      </div>
+      <div class="results-meta" id="results-meta"></div>
+    </div>
+    <div id="items-list"></div>
+  </div>
+
+  <div id="empty-state" class="empty-state">
+    <div class="empty-icon">⌖</div>
+    <div class="empty-text">Paste an auction URL above to begin scouting</div>
+    <div class="empty-sub">
+      URL mode: Bonhams · i-bidder · The Saleroom · LiveAuctioneers<br>
+      JS-only sites (RKTA, Shapiro, etc.) → use Paste Catalogue tab
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ── STATE ──
+const PRESETS = ["Watches","Jewellery","Art","Furniture","Ceramics","Silver","Books","Wine","Coins","Militaria"];
+let interests = ["Watches"];
+let showAll = false;
+let currentTab = "url";
+let pastedPages = [""];
+let scrapedData = null;
+let loading = false;
+let apiKey = "";
+
+const BOOKMARKLET = `javascript:(function(){(async function(){var lots=[];var title=document.title||location.href;var maxPages=50;function extractLots(){var items=[];var selectors=['[class*="lot"]','[class*="item"]','article','[data-lot]','.lot-item','.lot-card','.auction-lot'];for(var sel of selectors){var els=document.querySelectorAll(sel);if(els.length>3){els.forEach(function(el){var t=el.innerText.trim();if(t.length>20&&t.length<2000)items.push(t);});if(items.length>0)break;}}if(items.length===0){document.querySelectorAll('p,li,div').forEach(function(el){var t=el.innerText.trim();if(/(lot|est|starting|bid|AUD|USD|GBP|estimate)/i.test(t)&&t.length>30&&t.length<500)items.push(t);});}return items;}async function scrapeAllPages(){var allText=[];var visited=new Set();for(var p=0;p<maxPages;p++){var items=extractLots();allText=allText.concat(items);var nextBtn=document.querySelector('a[class*="next"],button[class*="next"],[aria-label="Next page"],[class*="pagination"] a:last-child');if(!nextBtn||visited.has(nextBtn.href||nextBtn.innerText))break;visited.add(nextBtn.href||nextBtn.innerText);nextBtn.click();await new Promise(function(r){setTimeout(r,1800);});}return allText;}var notify=document.createElement('div');notify.style.cssText='position:fixed;top:20px;right:20px;background:#D4A853;color:#000;padding:12px 20px;font-family:monospace;font-size:13px;z-index:99999;border-radius:2px;box-shadow:0 4px 12px rgba(0,0,0,0.3)';notify.innerText='AuctionScout: Scraping...';document.body.appendChild(notify);var allLots=await scrapeAllPages();notify.innerText='Found '+allLots.length+' lots. Sending to AuctionScout...';var msg={type:'AUCTION_SCOUT_DATA',payload:{auctionTitle:title,sourceUrl:location.href,lots:allLots.map(function(t,i){return{index:i+1,text:t};})}};if(window.opener)window.opener.postMessage(msg,'*');window.postMessage(msg,'*');try{var bc=new BroadcastChannel('auction_scout');bc.postMessage(msg);bc.close();}catch(e){}setTimeout(function(){notify.innerText=allLots.length+' lots sent!';setTimeout(function(){notify.remove();},2500);},400);})();})();`;
+
+// ── INIT ──
+document.getElementById('bm-preview').textContent = BOOKMARKLET.slice(0, 120) + '…';
+
+window.addEventListener('message', handleScrapedData);
+try {
+  const bc = new BroadcastChannel('auction_scout');
+  bc.onmessage = (e) => handleScrapedData({ data: e.data });
+} catch(_) {}
+
+function handleScrapedData(e) {
+  if (e.data && e.data.type === 'AUCTION_SCOUT_DATA') {
+    scrapedData = e.data.payload;
+    const count = scrapedData.lots?.length || 0;
+    document.getElementById('scrape-title').textContent = `✓ Scraped ${count} lots from ${scrapedData.auctionTitle || 'auction'}`;
+    document.getElementById('scrape-url').textContent = scrapedData.sourceUrl || '';
+    document.getElementById('scrape-waiting').style.display = 'none';
+    document.getElementById('scrape-ready').style.display = 'block';
+    document.getElementById('scrape-actions').style.display = 'block';
+    document.getElementById('scrape-btn').textContent = `Analyse ${count} Lots`;
+    if (currentTab !== 'scrape') switchTab('scrape');
+  }
+}
+
+// ── API KEY ──
+function saveApiKey() {
+  const val = document.getElementById('api-key-input').value.trim();
+  if (!val || !val.startsWith('sk-ant-')) {
+    document.getElementById('api-key-status').style.color = '#F08080';
+    document.getElementById('api-key-status').textContent = 'Invalid key — must start with sk-ant-';
+    return;
+  }
+  apiKey = val;
+  document.getElementById('api-banner').classList.add('hidden');
+}
+
+// ── TABS ──
+function switchTab(tab) {
+  currentTab = tab;
+  ['url','paste','scrape'].forEach(t => {
+    document.getElementById('tab-' + t).style.display = t === tab ? 'block' : 'none';
+    document.querySelector(`[data-tab="${t}"]`).classList.toggle('active', t === tab);
+  });
+  clearError();
+}
+
+// ── PASTE PAGES ──
+function renderPastePages() {
+  const container = document.getElementById('paste-pages');
+  container.innerHTML = '';
+  pastedPages.forEach((page, idx) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'page-wrap';
+    const label = document.createElement('div');
+    label.className = 'page-label';
+    label.innerHTML = `Page ${idx + 1}${pastedPages.length > 1 ? ` <button class="remove-page" onclick="removePage(${idx})">× remove</button>` : ''}${page.trim() ? ` <span style="color:var(--muted);font-size:9px">${page.trim().split('\n').filter(Boolean).length} lines</span>` : ''}`;
+    const ta = document.createElement('textarea');
+    ta.placeholder = `Paste lot text from page ${idx + 1} here…`;
+    ta.value = page;
+    ta.style.borderColor = page.trim() ? '#D4A85355' : 'var(--border)';
+    ta.addEventListener('input', (e) => {
+      pastedPages[idx] = e.target.value;
+      if (idx === pastedPages.length - 1 && e.target.value.trim()) {
+        pastedPages.push('');
+        renderPastePages();
+      } else {
+        updatePasteBtn();
+      }
+    });
+    wrap.appendChild(label);
+    wrap.appendChild(ta);
+    container.appendChild(wrap);
+  });
+  updatePasteBtn();
+}
+
+function removePage(idx) {
+  pastedPages.splice(idx, 1);
+  if (pastedPages.length === 0) pastedPages = [''];
+  renderPastePages();
+}
+
+function updatePasteBtn() {
+  const filled = pastedPages.filter(p => p.trim()).length;
+  const btn = document.getElementById('paste-btn');
+  btn.disabled = filled === 0;
+  btn.textContent = filled > 0 ? `Analyse ${filled} Page${filled !== 1 ? 's' : ''}` : 'Analyse';
+  document.getElementById('paste-count').textContent = filled > 0 ? `${filled} page${filled !== 1 ? 's' : ''} ready` : '';
+}
+
+renderPastePages();
+
+// ── INTERESTS ──
+function renderInterests() {
+  const presetsGrid = document.getElementById('presets-grid');
+  const customGrid = document.getElementById('custom-grid');
+  const allSelected = PRESETS.every(p => interests.includes(p));
+  
+  presetsGrid.innerHTML = '';
+  // "All" toggle
+  const allTag = document.createElement('div');
+  allTag.className = 'interest-tag' + (allSelected ? ' active' : '');
+  allTag.textContent = allSelected ? '✓ All' : 'All';
+  allTag.onclick = () => {
+    if (allSelected) interests = interests.filter(i => !PRESETS.includes(i));
+    else interests = [...new Set([...interests, ...PRESETS])];
+    renderInterests();
+  };
+  presetsGrid.appendChild(allTag);
+
+  PRESETS.forEach(p => {
+    const tag = document.createElement('div');
+    tag.className = 'interest-tag' + (interests.includes(p) ? ' active' : '');
+    tag.textContent = p;
+    tag.onclick = () => {
+      if (interests.includes(p)) interests = interests.filter(i => i !== p);
+      else interests.push(p);
+      renderInterests();
+    };
+    presetsGrid.appendChild(tag);
+  });
+
+  customGrid.innerHTML = '';
+  interests.filter(i => !PRESETS.includes(i)).forEach(i => {
+    const tag = document.createElement('div');
+    tag.className = 'interest-tag active';
+    tag.innerHTML = `${i} <button class="remove" onclick="removeCustomInterest('${i}')">×</button>`;
+    customGrid.appendChild(tag);
+  });
+
+  const wrap = document.getElementById('interests-wrap');
+  wrap.style.opacity = showAll ? '0.35' : '1';
+  wrap.style.pointerEvents = showAll ? 'none' : 'auto';
+}
+
+function addInterest() {
+  const input = document.getElementById('add-interest-input');
+  const val = input.value.trim();
+  if (val && !interests.find(i => i.toLowerCase() === val.toLowerCase())) {
+    interests.push(val);
+    renderInterests();
+  }
+  input.value = '';
+}
+
+function removeCustomInterest(val) {
+  interests = interests.filter(i => i !== val);
+  renderInterests();
+}
+
+function toggleShowAll() {
+  showAll = !showAll;
+  const btn = document.getElementById('show-all-btn');
+  btn.classList.toggle('active', showAll);
+  btn.textContent = showAll ? '◉ All Categories' : '○ All Categories';
+  document.getElementById('showAll-note').style.display = showAll ? 'block' : 'none';
+  renderInterests();
+}
+
+renderInterests();
+
+// ── SCRAPE ──
+function copyBookmarklet() {
+  navigator.clipboard.writeText(BOOKMARKLET).then(() => {
+    document.getElementById('copy-bm-btn').textContent = '✓ Copied!';
+    document.getElementById('copy-bm-btn2').textContent = '✓';
+    setTimeout(() => {
+      document.getElementById('copy-bm-btn').textContent = 'Copy Bookmarklet Code';
+      document.getElementById('copy-bm-btn2').textContent = 'copy';
+    }, 2500);
+  });
+}
+
+function clearScrape() {
+  scrapedData = null;
+  document.getElementById('scrape-ready').style.display = 'none';
+  document.getElementById('scrape-actions').style.display = 'none';
+  document.getElementById('scrape-waiting').style.display = 'flex';
+}
+
+// ── ERROR ──
+function showError(msg) {
+  const box = document.getElementById('error-box');
+  box.textContent = '⚠ ' + msg;
+  box.style.display = 'block';
+}
+function clearError() {
+  document.getElementById('error-box').style.display = 'none';
+}
+
+// ── ANALYSE ──
+async function analyse() {
+  if (!apiKey) {
+    document.getElementById('api-banner').classList.remove('hidden');
+    document.getElementById('api-key-input').focus();
+    showError('Please enter your Anthropic API key above first.');
+    return;
+  }
+  if (loading) return;
+  clearError();
+
+  const urlVal = document.getElementById('url-input').value.trim();
+  if (currentTab === 'url' && !urlVal) return;
+  if (currentTab === 'paste' && !pastedPages.some(p => p.trim())) return;
+  if (currentTab === 'scrape' && !scrapedData) return;
+
+  setLoading(true);
+
+  const interestStr = showAll
+    ? "Show the best opportunities across ALL categories — rank every lot purely by value, rarity, and bidding opportunity. Do not filter by category."
+    : `My interests are: ${interests.length > 0 ? interests.join(', ') : 'no specific preferences — show best overall opportunities'}. Prioritize matching items, but flag exceptional hidden gems too.`;
+
+  // Detect JS-only platforms
+  let auctionHouseName = "";
+  let isJSSite = false;
+  try {
+    const hostname = new URL(urlVal).hostname;
+    const jsPlatforms = [
+      { match: "live.rkta.com.au", name: "Raffan Kelaher & Thomas" },
+      { match: "live.lawsons.com.au", name: "Lawsons" },
+      { match: "live.shapiro.com.au", name: "Shapiro" },
+      { match: "online.leski.com.au", name: "Leski Auctions" },
+      { match: "bid.chisholms.com.au", name: "Chisholm's" },
+    ];
+    const matched = jsPlatforms.find(p => hostname.includes(p.match));
+    if (matched) { isJSSite = true; auctionHouseName = matched.name; }
+  } catch(_) {}
+
+  let auctionSlug = "";
+  try { auctionSlug = new URL(urlVal).pathname.split('/').filter(Boolean).pop().replace(/-/g,' '); } catch(_) {}
+
+  const systemPrompt = `You are an expert auction analyst. Find auction lot data and identify the best bidding opportunities.
+
+STRATEGY: Many auction sites are JavaScript SPAs and return empty HTML. You MUST use web_search to find the lots.
+
+Step 1: Try web_search for the auction house + title on aggregator sites:
+  - Search: "[auction house] [auction name] lots invaluable"
+  - Search: "[auction house] [auction name] site:invaluable.com OR site:the-saleroom.com OR site:liveauctioneers.com"
+  - Search: "[auction house] [auction title] upcoming auction 2026 lots"
+
+Step 2: If you find an Invaluable, The Saleroom, or LiveAuctioneers page, fetch it and extract all lots.
+
+Step 3: Rank and return results as JSON ONLY — no markdown, no preamble, nothing outside the JSON object.
+
+JSON format:
+{
+  "auctionTitle": "Name of auction",
+  "auctionHouse": "House name",
+  "totalLots": 42,
+  "analysisNote": "One sentence overview",
+  "dataSource": "invaluable.com / the-saleroom.com / etc",
+  "items": [
+    {
+      "rank": 1,
+      "lotNumber": "Lot 12",
+      "name": "Item name",
+      "description": "Brief description",
+      "startingPrice": "AU$500",
+      "estimate": "AU$800-1,200",
+      "reasoning": "Why this is a good opportunity",
+      "tags": ["interest_match", "value_opportunity"],
+      "valueScore": 85,
+      "isSuggestion": false
+    }
+  ]
+}
+
+Tags: "interest_match", "value_opportunity", "hidden_gem", "caution"
+isSuggestion: true = recommending outside stated interests
+valueScore: 0-100
+Return 8-15 items max, best to worst.
+
+If after searching you cannot find lot data:
+{"error": "Could not find lot data for this auction after searching multiple sources."}`;
+
+  let userPrompt;
+  if (currentTab === 'scrape' && scrapedData) {
+    userPrompt = `Here is auction lot data automatically scraped from ${scrapedData.sourceUrl || 'the auction site'}:
+
+Auction: ${scrapedData.auctionTitle || 'Unknown'}
+Total lots scraped: ${scrapedData.lots?.length || 0}
+
+Lots:
+${JSON.stringify(scrapedData.lots || [], null, 2).slice(0, 30000)}
+
+${interestStr}`;
+  } else if (currentTab === 'paste') {
+    const combined = pastedPages.map((p, i) => p.trim() ? `--- PAGE ${i+1} ---\n${p.trim()}` : '').filter(Boolean).join('\n\n');
+    userPrompt = `Here is the auction catalogue text pasted directly from the auction site (${pastedPages.filter(p=>p.trim()).length} pages):
+
+---
+${combined.slice(0, 30000)}
+---
+
+${interestStr}`;
+  } else if (isJSSite) {
+    userPrompt = `Analyse the auction at: ${urlVal}
+
+This is a ${auctionHouseName} auction. The site is a JavaScript SPA — fetching it directly will return empty Angular templates with no lot data.
+
+YOU MUST search for this auction's lots on aggregator sites instead. Try:
+1. Search: "${auctionHouseName} ${auctionSlug} lots invaluable 2026"
+2. Search: "${auctionHouseName} auction lots 2026 invaluable OR saleroom"
+3. Fetch any Invaluable/The Saleroom/LiveAuctioneers page you find
+
+${interestStr}`;
+  } else {
+    userPrompt = `Analyse this auction: ${urlVal}
+
+Search for lots if the page doesn't load directly.
+
+${interestStr}`;
+  }
+
+  try {
+    const body = {
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 4000,
+      system: systemPrompt,
+      messages: [{ role: "user", content: userPrompt }]
+    };
+    if (currentTab === 'url') body.tools = [{ type: "web_search_20250305", name: "web_search" }];
+
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true"
+      },
+      body: JSON.stringify(body)
+    });
+
+    const data = await response.json();
+    if (data.error) { showError(data.error.message || "API error."); setLoading(false); return; }
+
+    const textBlock = data.content?.find(b => b.type === "text");
+    const raw = textBlock?.text || "";
+    const clean = raw.replace(/```json|```/g, "").trim();
+    const jsonMatch = clean.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) { showError("Could not extract results. Try Paste Catalogue mode or a different auction site."); setLoading(false); return; }
+
+    const parsed = JSON.parse(jsonMatch[0]);
+    if (parsed.error) { showError(parsed.error + " Try The Saleroom, Invaluable, or Bonhams."); setLoading(false); return; }
+
+    renderResults(parsed);
+  } catch(err) {
+    showError("Request failed: " + (err.message || "Unknown error. Check your API key and try again."));
+  }
+  setLoading(false);
+}
+
+// ── RENDER RESULTS ──
+function renderResults(data) {
+  document.getElementById('empty-state').style.display = 'none';
+  document.getElementById('results-wrap').style.display = 'block';
+
+  document.getElementById('results-title').innerHTML = `<em>${data.auctionTitle || 'Auction Analysis'}</em>`;
+  document.getElementById('results-note').textContent = data.analysisNote || '';
+  document.getElementById('results-source').textContent = data.dataSource ? `◎ data sourced via ${data.dataSource}` : '';
+  document.getElementById('results-meta').innerHTML = `${data.totalLots ? data.totalLots + ' lots total' : ''}<br>${(data.items?.length || 0)} opportunities ranked`;
+
+  const list = document.getElementById('items-list');
+  list.innerHTML = '';
+
+  (data.items || []).forEach((item, i) => {
+    const isFirstSuggestion = item.isSuggestion && (i === 0 || !(data.items[i-1]?.isSuggestion));
+    if (isFirstSuggestion) {
+      const banner = document.createElement('div');
+      banner.className = 'suggestion-banner';
+      banner.textContent = '◆ Also worth your attention — outside your stated interests but potentially exceptional value';
+      list.appendChild(banner);
+    }
+
+    const card = document.createElement('div');
+    card.className = 'item-card';
+    card.style.animationDelay = `${i * 0.06}s`;
+
+    const badges = (item.tags || []).map(t => {
+      const cls = t === 'interest_match' ? 'badge-interest' : t === 'value_opportunity' ? 'badge-value' : t === 'hidden_gem' ? 'badge-hidden' : 'badge-caution';
+      const label = t === 'interest_match' ? '★ Your Interest' : t === 'value_opportunity' ? '↑ Value' : t === 'hidden_gem' ? '◆ Hidden Gem' : '⚠ Caution';
+      return `<span class="badge ${cls}">${label}</span>`;
+    }).join('');
+
+    card.innerHTML = `
+      <div class="item-rank">
+        <div class="rank-num">${item.rank || i+1}</div>
+        <div class="rank-label">rank</div>
+      </div>
+      <div class="item-body">
+        <div class="item-lot">${item.lotNumber || ''}</div>
+        <div class="item-name">${item.name || ''}</div>
+        <div class="badges">${badges}</div>
+        <div class="item-desc">${item.description || ''}</div>
+        <div class="item-reasoning">${item.reasoning || ''}</div>
+      </div>
+      <div class="item-side">
+        ${item.startingPrice ? `<div><div class="price-label">Starting</div><div class="price-val">${item.startingPrice}</div></div>` : ''}
+        ${item.estimate ? `<div><div class="price-label">Estimate</div><div class="price-val est">${item.estimate}</div></div>` : ''}
+        <div>
+          <div class="price-label">Opportunity</div>
+          <div class="score-bar-bg"><div class="score-bar-fill" style="width:${item.valueScore || 50}%"></div></div>
+        </div>
+      </div>`;
+    list.appendChild(card);
+  });
+}
+
+// ── LOADING STATE ──
+function setLoading(state) {
+  loading = state;
+  document.getElementById('loading-wrap').style.display = state ? 'block' : 'none';
+  if (state) {
+    document.getElementById('results-wrap').style.display = 'none';
+    document.getElementById('empty-state').style.display = 'none';
+  }
+  ['url-btn','paste-btn','scrape-btn'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.disabled = state; if (state) el.textContent = 'Analysing…'; }
+  });
+}
+</script>
+</body>
+</html>
