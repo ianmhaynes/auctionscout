@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AuctionScout — Intelligent Lot Analysis</title>
+  <title>LotHunters — Intelligent Lot Analysis</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet" />
   <style>
@@ -373,7 +373,7 @@
 
 <header class="header">
   <div class="header-left">
-    <div class="logo">Auction<span>Scout</span></div>
+    <div class="logo">Lot<span>Hunters</span></div>
     <div class="tagline">// intelligent lot analysis &amp; bidding intelligence</div>
   </div>
 </header>
@@ -415,8 +415,8 @@
       </div>
       <div class="steps">
         <div class="step"><div class="step-num">1.</div><div class="step-text">Copy the bookmarklet code below<br><button class="btn btn-sm" style="margin-top:8px" onclick="copyBookmarklet()" id="copy-bm-btn">Copy Bookmarklet Code</button></div></div>
-        <div class="step"><div class="step-num">2.</div><div class="step-text">In Chrome: drag it from your bookmarks bar — or in Safari: Bookmarks → Add Bookmark → paste code as the URL, name it <strong>AuctionScout</strong></div></div>
-        <div class="step"><div class="step-num">3.</div><div class="step-text">Open your auction site, click the AuctionScout bookmark</div></div>
+        <div class="step"><div class="step-num">2.</div><div class="step-text">In Chrome: drag it from your bookmarks bar — or in Safari: Bookmarks → Add Bookmark → paste code as the URL, name it <strong>LotHunters</strong></div></div>
+        <div class="step"><div class="step-num">3.</div><div class="step-text">Open your auction site, click the LotHunters bookmark</div></div>
         <div class="step"><div class="step-num">4.</div><div class="step-text">Switch back here — lots arrive automatically</div></div>
       </div>
       <div class="code-preview">
@@ -498,7 +498,7 @@ let scrapedData = null;
 let loading = false;
 let apiKey = "";
 
-const BOOKMARKLET = `javascript:(function(){(async function(){var lots=[];var title=document.title||location.href;var maxPages=50;function extractLots(){var items=[];var selectors=['[class*="lot"]','[class*="item"]','article','[data-lot]','.lot-item','.lot-card','.auction-lot'];for(var sel of selectors){var els=document.querySelectorAll(sel);if(els.length>3){els.forEach(function(el){var t=el.innerText.trim();if(t.length>20&&t.length<2000)items.push(t);});if(items.length>0)break;}}if(items.length===0){document.querySelectorAll('p,li,div').forEach(function(el){var t=el.innerText.trim();if(/(lot|est|starting|bid|AUD|USD|GBP|estimate)/i.test(t)&&t.length>30&&t.length<500)items.push(t);});}return items;}async function scrapeAllPages(){var allText=[];var visited=new Set();for(var p=0;p<maxPages;p++){var items=extractLots();allText=allText.concat(items);var nextBtn=document.querySelector('a[class*="next"],button[class*="next"],[aria-label="Next page"],[class*="pagination"] a:last-child');if(!nextBtn||visited.has(nextBtn.href||nextBtn.innerText))break;visited.add(nextBtn.href||nextBtn.innerText);nextBtn.click();await new Promise(function(r){setTimeout(r,1800);});}return allText;}var notify=document.createElement('div');notify.style.cssText='position:fixed;top:20px;right:20px;background:#D4A853;color:#000;padding:12px 20px;font-family:monospace;font-size:13px;z-index:99999;border-radius:2px;box-shadow:0 4px 12px rgba(0,0,0,0.3)';notify.innerText='AuctionScout: Scraping...';document.body.appendChild(notify);var allLots=await scrapeAllPages();notify.innerText='Found '+allLots.length+' lots. Sending to AuctionScout...';var msg={type:'AUCTION_SCOUT_DATA',payload:{auctionTitle:title,sourceUrl:location.href,lots:allLots.map(function(t,i){return{index:i+1,text:t};})}};if(window.opener)window.opener.postMessage(msg,'*');window.postMessage(msg,'*');try{var bc=new BroadcastChannel('auction_scout');bc.postMessage(msg);bc.close();}catch(e){}setTimeout(function(){notify.innerText=allLots.length+' lots sent!';setTimeout(function(){notify.remove();},2500);},400);})();})();`;
+const BOOKMARKLET = `javascript:(function(){(async function(){var lots=[];var title=document.title||location.href;var maxPages=50;function extractLots(){var items=[];var selectors=['[class*="lot"]','[class*="item"]','article','[data-lot]','.lot-item','.lot-card','.auction-lot'];for(var sel of selectors){var els=document.querySelectorAll(sel);if(els.length>3){els.forEach(function(el){var t=el.innerText.trim();if(t.length>20&&t.length<2000)items.push(t);});if(items.length>0)break;}}if(items.length===0){document.querySelectorAll('p,li,div').forEach(function(el){var t=el.innerText.trim();if(/(lot|est|starting|bid|AUD|USD|GBP|estimate)/i.test(t)&&t.length>30&&t.length<500)items.push(t);});}return items;}async function scrapeAllPages(){var allText=[];var visited=new Set();for(var p=0;p<maxPages;p++){var items=extractLots();allText=allText.concat(items);var nextBtn=document.querySelector('a[class*="next"],button[class*="next"],[aria-label="Next page"],[class*="pagination"] a:last-child');if(!nextBtn||visited.has(nextBtn.href||nextBtn.innerText))break;visited.add(nextBtn.href||nextBtn.innerText);nextBtn.click();await new Promise(function(r){setTimeout(r,1800);});}return allText;}var notify=document.createElement('div');notify.style.cssText='position:fixed;top:20px;right:20px;background:#D4A853;color:#000;padding:12px 20px;font-family:monospace;font-size:13px;z-index:99999;border-radius:2px;box-shadow:0 4px 12px rgba(0,0,0,0.3)';notify.innerText='LotHunters: Scraping...';document.body.appendChild(notify);var allLots=await scrapeAllPages();notify.innerText='Found '+allLots.length+' lots. Sending to LotHunters...';var msg={type:'AUCTION_SCOUT_DATA',payload:{auctionTitle:title,sourceUrl:location.href,lots:allLots.map(function(t,i){return{index:i+1,text:t};})}};if(window.opener)window.opener.postMessage(msg,'*');window.postMessage(msg,'*');try{var bc=new BroadcastChannel('auction_scout');bc.postMessage(msg);bc.close();}catch(e){}setTimeout(function(){notify.innerText=allLots.length+' lots sent!';setTimeout(function(){notify.remove();},2500);},400);})();})();`;
 
 // ── INIT ──
 document.getElementById('bm-preview').textContent = BOOKMARKLET.slice(0, 120) + '…';
